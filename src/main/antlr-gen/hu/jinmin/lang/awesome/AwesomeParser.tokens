@@ -1,0 +1,5 @@
+INT=1
+DOUBLE=2
+PLUS=3
+WS=4
+'+'=3

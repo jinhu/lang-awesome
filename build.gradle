@@ -1,0 +1,68 @@
+group = 'hu.jinmin.lang'
+version = '1.0'
+
+apply plugin: 'java'
+apply plugin: 'antlr'
+
+
+repositories {
+    mavenCentral()
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+}
+def generatedPackage = 'hu.jinmin.lang.awesome'
+def generatedOutputDir = "src/main/antlr-gen/${generatedPackage.replace('.', '/')}"
+
+sourceSets {
+    main {
+        antlr {
+            // Reuse the existing C# grammars from the parent module.
+            srcDirs = ['src/main/antlr']
+            include 'AwesomeLexer.g4', 'AwesomeParser.g4'
+        }
+        java {
+            srcDirs = ['src/main/java', "src/main/antlr-gen"]
+        }
+    }
+}
+
+test {
+    useJUnitPlatform()
+
+    jvmArgs '-ea', '--enable-native-access=ALL-UNNAMED',
+            '--sun-misc-unsafe-memory-access=allow'
+
+    testLogging {
+        events 'failed'
+        exceptionFormat = 'full'
+    }
+}
+
+ext {
+    graal_version = '25.0.3'
+    antlr_version = '4.13.2'
+}
+
+dependencies {
+    antlr "org.antlr:antlr4:$antlr_version"
+    implementation "org.graalvm.truffle:truffle-api:$graal_version"
+    annotationProcessor "org.graalvm.truffle:truffle-dsl-processor:$graal_version"
+
+    testImplementation "org.junit.jupiter:junit-jupiter:5.9.3"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+}
+
+
+generateGrammarSource {
+    outputDirectory = file(generatedOutputDir)
+    arguments += ['-visitor', '-package', generatedPackage]
+}
+
+tasks.withType(JavaCompile).configureEach {
+    dependsOn tasks.generateGrammarSource
+    options.encoding = 'UTF-8'
+}
+
